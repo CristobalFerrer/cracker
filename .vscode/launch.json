@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "DeepCrack: poc_inference",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/DeepCrack/codes/poc_inference.py",
+      "cwd": "${workspaceFolder}/DeepCrack/codes",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/DeepCrack/codes"
+      }
+    },
+    {
+      "name": "DeepCrack: current file (codes cwd)",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}/DeepCrack/codes",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/DeepCrack/codes"
+      }
+    },
+    {
+      "name": "DeepCrack: test.py",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/DeepCrack/codes/test.py",
+      "cwd": "${workspaceFolder}/DeepCrack/codes",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/DeepCrack/codes"
+      }
+    }
+  ]
+}

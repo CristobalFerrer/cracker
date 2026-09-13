@@ -1,0 +1,4 @@
+# Optional: only if you want real Visdom logging (training). Try:
+#   pip install --no-build-isolation visdom
+# or use Python 3.10/3.11 if the above fails.
+visdom>=0.1.8

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cracker — pavement crack viewer</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="page-main">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">🛣️</span>
+      <div>
+        <h1>Cracker</h1>
+        <p class="tagline">DeepCrack pavement-crack detection &amp; viewer</p>
+      </div>
+    </div>
+    <a class="btn-ghost" href="/viewer" target="_blank" rel="noopener" id="btnPopout" title="Open the same view in a separate window (handy on a second monitor)">
+      Open in new window ↗
+    </a>
+  </header>
+
+  <main class="layout">
+    <div class="tabs" id="mainTabs">
+      <div class="tab-list" role="tablist" aria-label="Setup">
+        <button type="button" class="tab-btn" role="tab" id="tabJob" aria-selected="true" aria-controls="panelJob" tabindex="0">① Run detection</button>
+        <button type="button" class="tab-btn" role="tab" id="tabLoad" aria-selected="false" aria-controls="panelLoad" tabindex="-1">② Load a result</button>
+      </div>
+
+      <div id="panelJob" role="tabpanel" class="tab-panel" aria-labelledby="tabJob">
+        <section class="panel">
+          <p class="hint">Runs DeepCrack on images in <code>input_crops</code> (or a folder you choose below) and writes results into a new run folder.</p>
+          <form id="jobForm" class="job-form">
+            <label>Label <input type="text" id="jobLabel" placeholder="optional note, e.g. “north lot”" /></label>
+            <label>Input folder (optional) <input type="text" id="jobInputDir" placeholder="default: DeepCrack …/input_crops" class="wide" /></label>
+
+            <details class="advanced">
+              <summary>Advanced settings</summary>
+              <div class="advanced-grid">
+                <label class="inline"><input type="checkbox" id="jobTiling" checked /> Tile large images (512² windows)</label>
+                <label class="inline"><input type="checkbox" id="jobOutFull" checked /> Output at full input resolution</label>
+                <label class="inline"><input type="checkbox" id="jobDebugTiming" checked /> Phase timing lines in log</label>
+                <label>Effective longest side (px)
+                  <input type="number" id="jobTargetLongEdge" min="0" max="65535" step="1" value="0" />
+                  <span class="hint-inline">0 = full resolution</span>
+                </label>
+                <label>Tile overlap (% of tile width)
+                  <input type="number" id="jobOverlap" min="0" max="99" step="0.5" value="25" />
+                </label>
+                <label>Tile batch size <input type="number" id="jobBatch" min="1" max="32" value="4" /></label>
+                <label>Model input size <input type="number" id="jobSize" min="64" max="1024" value="512" step="64" /></label>
+                <p class="hint ortho-detected-hint" id="orthoDetectedWrap">
+                  Longest side for scale example (from loaded original):
+                  <strong id="orthoLongSideLbl">— load an original below to see one</strong>
+                </p>
+                <p class="hint inference-scale-hint" id="inferenceScaleHint"></p>
+              </div>
+            </details>
+
+            <button type="submit" id="btnStartJob">Start detection</button>
+          </form>
+          <p class="job-status" id="jobPollStatus"></p>
+          <details class="job-log-wrap" open>
+            <summary>Job output</summary>
+            <div class="job-log-toolbar">
+              <span class="hint-inline" id="jobLogHint"></span>
+              <button type="button" id="btnRefreshJobLog" class="btn-small">Refresh log</button>
+            </div>
+            <pre id="jobLog" class="job-log" aria-live="polite"></pre>
+          </details>
+        </section>
+      </div>
+
+      <div id="panelLoad" role="tabpanel" class="tab-panel" aria-labelledby="tabLoad" hidden>
+        <section class="panel">
+          <div class="row">
+            <label>Run
+              <select id="selRun"><option value="">— legacy poc_results —</option></select>
+            </label>
+            <label>Image
+              <select id="selImage"><option value="">— pick a run first —</option></select>
+            </label>
+            <button type="button" id="btnLoadServer" class="btn-primary">Load</button>
+          </div>
+          <div class="row row-tight">
+            <button type="button" id="btnRefreshRuns" class="btn-small">Refresh runs</button>
+            <button type="button" id="btnClearRuns" class="btn-danger">Clear all runs</button>
+          </div>
+          <details class="advanced">
+            <summary>Pick original / crack map separately</summary>
+            <p class="hint">Use this if a run's original image can't be auto-matched (custom input folder, renamed files).</p>
+            <div class="advanced-grid">
+              <label>Original
+                <select id="selOrigServer"></select>
+              </label>
+              <label>Crack prob
+                <select id="selCrackServer"></select>
+              </label>
+            </div>
+          </details>
+        </section>
+      </div>
+    </div>
+
+    <section class="viewer-panel">
+      <div class="panel viewer-toolbar">
+        <div class="viewer-toolbar-row">
+          <label class="file">
+            Original (local file)
+            <input type="file" id="fileOriginal" accept="image/*" />
+          </label>
+          <label class="file">
+            Crack probability (local file)
+            <input type="file" id="fileCrack" accept="image/*" />
+          </label>
+          <button type="button" id="btnClear" class="btn-small">Clear selection</button>
+        </div>
+        <div class="viewer-toolbar-row">
+          <label>
+            Threshold (0–255)
+            <input type="range" id="threshold" min="0" max="255" value="96" />
+            <span id="thresholdVal">96</span>
+          </label>
+          <label>
+            Overlay strength
+            <input type="range" id="overlayAlpha" min="0" max="100" value="55" />
+            <span id="overlayAlphaVal">0.55</span>
+          </label>
+          <label title="Pulls up weak crack signal so thin lines stay visible when zoomed out">
+            Faint crack boost
+            <input type="range" id="faintCrackBoost" min="0" max="100" value="35" />
+            <span id="faintCrackBoostVal">35%</span>
+          </label>
+          <div class="zoom-controls">
+            <span class="zoom-controls-label">Zoom</span>
+            <button type="button" id="btnZoomOut" class="btn-zoom" title="Zoom out">−</button>
+            <input type="range" id="zoom" min="25" max="400" step="5" value="100" />
+            <button type="button" id="btnZoomIn" class="btn-zoom" title="Zoom in">+</button>
+            <span id="zoomVal">100%</span>
+            <button type="button" id="btnZoomReset" class="btn-small" title="Reset zoom to 100%">100%</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="viewport" id="viewport" tabindex="0">
+        <canvas id="canvas"></canvas>
+        <p class="viewport-empty" id="viewportEmpty">Run a detection job or load a result to see the crack overlay here.</p>
+      </div>
+
+      <p class="status" id="status">Load both images to begin. Large images are scaled (max edge <span id="maxEdgeLbl"></span> px) for smooth interaction. Wheel zooms over the image; pan by scrolling when zoomed in.</p>
+    </section>
+
+    <section class="panel panel-summary">
+      <h2>Crack summary <span class="hint-inline">(PCI-oriented heuristics)</span></h2>
+      <details class="pci-disclaimer-wrap">
+        <summary>What is the "PCI-style" column?</summary>
+        <p class="hint pci-disclaimer">
+          Regions come from thresholded crack probability (8-connected components). The <strong>PCI-style</strong> column is a
+          <strong>shape heuristic only</strong> (elongation + orientation in image coordinates). It is <strong>not</strong> an
+          ASTM D6433 survey, official severity, or certified PCI index. Align your ortho so lane / longitudinal cracks run
+          roughly horizontally if you want &ldquo;longitudinal-like&rdquo; to match pavement axes.
+        </p>
+      </details>
+      <div class="row gsd-row">
+        <label>Ground sample distance (m / px at <strong>full ortho</strong> resolution)
+          <input type="number" id="inputGsd" min="0" max="10" step="0.0001" value="0" placeholder="0 = show px only" />
+        </label>
+        <span class="hint-inline">Viewer uses a downscaled copy; lengths/areas convert using full-res pixel size.</span>
+      </div>
+      <div class="crack-table-wrap">
+        <table class="crack-table" id="crackTable">
+          <thead>
+            <tr>
+              <th data-sort="id" class="sortable">ID</th>
+              <th data-sort="pciLabel" class="sortable">PCI-style (heuristic)</th>
+              <th data-sort="area" class="sortable num">Area (px)</th>
+              <th data-sort="lengthPx" class="sortable num">Length est. (px)</th>
+              <th data-sort="angleDeg" class="sortable num">Axis &deg;</th>
+              <th data-sort="elong" class="sortable num">Elong.</th>
+              <th data-sort="meanLum" class="sortable num">Mean signal</th>
+              <th data-sort="bboxW" class="sortable num">Bbox W×H</th>
+              <th data-sort="lengthM" class="sortable num len-m-col">Len. (m)</th>
+              <th data-sort="areaM2" class="sortable num area-m-col">Area (m²)</th>
+            </tr>
+          </thead>
+          <tbody id="crackTableBody">
+            <tr class="placeholder-row"><td colspan="10">Load original + crack probability, then adjust threshold to list regions.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/sync-bridge.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

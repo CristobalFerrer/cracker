@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cracker — pop-out viewer</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="page-viewer">
+  <header class="bar">
+    <h1>Pop-out viewer</h1>
+    <p class="sub">
+      Mirrors whatever is loaded on the <a href="/">main page</a>. Keep this open on a second monitor — hover, selection, and overlay settings stay in sync via <code>BroadcastChannel</code> + a local snapshot.
+    </p>
+  </header>
+
+  <section class="panel">
+    <p id="viewerHint" class="sub">Load or run a detection on the main page — this window updates automatically. Controls below mirror overlay / zoom / threshold; threshold changes here are sent back to the main page for a full re-analysis.</p>
+    <label>Overlay <input type="range" id="overlayAlpha" min="0" max="100" value="55" /> <span id="overlayAlphaVal">0.55</span></label>
+    <label title="Weak crack signal → stronger tint">Faint crack boost <input type="range" id="faintCrackBoost" min="0" max="100" value="35" /> <span id="faintCrackBoostVal">35%</span></label>
+    <label>Zoom <input type="range" id="zoom" min="25" max="400" value="100" step="5" /> <span id="zoomVal">100%</span></label>
+    <label>Threshold <input type="range" id="threshold" min="0" max="255" value="128" /> <span id="thresholdVal">128</span></label>
+    <button type="button" id="btnZoomIn">Zoom +</button>
+    <button type="button" id="btnZoomOut">Zoom −</button>
+    <button type="button" id="btnZoomReset">Reset zoom</button>
+  </section>
+
+  <section class="status" id="status">Waiting for snapshot from the main tab…</section>
+
+  <div class="viewport" id="viewport" tabindex="0">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <script src="/static/sync-bridge.js"></script>
+  <script src="/static/viewer.js"></script>
+</body>
+</html>

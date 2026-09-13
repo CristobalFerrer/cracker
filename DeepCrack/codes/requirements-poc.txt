@@ -1,0 +1,6 @@
+# DeepCrack POC — non-PyTorch deps (PyTorch is installed by setup_venv.ps1).
+# Visdom is omitted: building it on Python 3.12 often fails; tools/visdom.py uses a stub for POC/test.
+numpy>=1.19
+opencv-python>=4.5
+tqdm>=4.60
+setproctitle>=1.1

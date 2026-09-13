@@ -1,0 +1,22 @@
+# Python virtual environments (recreated by setup.bat)
+.venv/
+__pycache__/
+*.pyc
+
+# Model weights (~120 MB, exceeds GitHub's file size limit anyway — see DeepCrack/POC_README.md)
+DeepCrack/codes/checkpoints/*
+!DeepCrack/codes/checkpoints/.gitkeep
+
+# User data: input images, job outputs, run history
+DeepCrack/codes/input_crops/*
+!DeepCrack/codes/input_crops/.gitkeep
+DeepCrack/codes/poc_results/*
+!DeepCrack/codes/poc_results/.gitkeep
+platform/data/runs/*
+!platform/data/runs/.gitkeep
+
+# Editor / OS cruft
+.vs/
+*.swp
+Thumbs.db
+.DS_Store

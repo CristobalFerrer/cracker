@@ -1,0 +1,7 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/DeepCrack/codes/.venv/Scripts/python.exe",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/DeepCrack/codes"
+  ],
+  "python.terminal.activateEnvironment": true
+}
