@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
 
 from cracker_platform.services.inference_jobs import (
@@ -12,6 +12,7 @@ from cracker_platform.services.inference_jobs import (
     list_jobs,
     load_job,
     read_job_logs,
+    save_uploaded_input,
 )
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -86,6 +87,33 @@ def create_inference_job(body: InferenceJobCreate) -> JobRecordResponse:
         debug_timing=body.debug_timing,
     )
     rec = enqueue_inference_job(body.label, params)
+    return JobRecordResponse.from_record(rec)
+
+
+@router.post("/from-upload", response_model=JobRecordResponse)
+async def create_inference_job_from_upload(
+    file: UploadFile = File(...),
+    label: str | None = Form(default=None),
+    use_tiling_for_large_images: bool = Form(default=True),
+    tile_overlap_percent: float = Form(default=25.0),
+    tile_batch_size: int = Form(default=4),
+    size: int = Form(default=512),
+) -> JobRecordResponse:
+    """Simple path for the UI: run detection on a single uploaded photo with sane defaults."""
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty")
+    job_id, input_dir = save_uploaded_input(data, file.filename or "image.jpg")
+    params = InferenceJobParams(
+        use_tiling_for_large_images=use_tiling_for_large_images,
+        output_at_input_resolution=True,
+        tile_overlap_percent=tile_overlap_percent,
+        tile_batch_size=tile_batch_size,
+        size=size,
+        input_dir=input_dir,
+        debug_timing=False,
+    )
+    rec = enqueue_inference_job(label, params, job_id=job_id)
     return JobRecordResponse.from_record(rec)
 
 

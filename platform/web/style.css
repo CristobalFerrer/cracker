@@ -231,6 +231,22 @@ code {
   min-width: 260px;
 }
 
+.job-form label.file-picker {
+  grid-column: 1 / -1;
+  border: 1px dashed var(--border-soft);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  background: var(--bg-alt);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.job-form label.file-picker input[type="file"] {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
 input[type="text"],
 input[type="number"],
 select {
@@ -320,12 +336,6 @@ details.advanced summary:hover {
 
 details.advanced .advanced-grid {
   margin-top: 0.75rem;
-}
-
-details.advanced .inference-scale-hint,
-details.advanced .ortho-detected-hint {
-  grid-column: 1 / -1;
-  margin: 0;
 }
 
 /* Job status + log */
@@ -491,8 +501,19 @@ details.advanced .ortho-detected-hint {
   color: var(--text-muted);
 }
 
+.viewer-toolbar-row label.inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .viewer-toolbar-row input[type="range"] {
   width: 150px;
+}
+
+.toolbar-group-label {
+  font-size: 0.78rem;
+  color: var(--text-faint);
 }
 
 .file input[type="file"] {
@@ -728,6 +749,12 @@ body.page-viewer .panel label {
   font-size: 0.8rem;
   color: var(--text-muted);
   margin: 0 1.25rem 0.75rem 0;
+}
+
+body.page-viewer .panel label.inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 body.page-viewer .panel button {

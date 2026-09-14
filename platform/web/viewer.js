@@ -17,6 +17,8 @@
   const el = {
     overlayAlpha: document.getElementById("overlayAlpha"),
     overlayAlphaVal: document.getElementById("overlayAlphaVal"),
+    showImage: document.getElementById("showImage"),
+    showProb: document.getElementById("showProb"),
     zoom: document.getElementById("zoom"),
     zoomVal: document.getElementById("zoomVal"),
     threshold: document.getElementById("threshold"),
@@ -188,6 +190,8 @@
     if (typeof rec.overlayAlpha === "number") el.overlayAlpha.value = String(rec.overlayAlpha);
     if (typeof rec.zoom === "number") el.zoom.value = String(rec.zoom);
     if (typeof rec.threshold === "number") el.threshold.value = String(rec.threshold);
+    if (typeof rec.showImage === "boolean" && el.showImage) el.showImage.checked = rec.showImage;
+    if (typeof rec.showProb === "boolean" && el.showProb) el.showProb.checked = rec.showProb;
     {
       const fi = document.getElementById("faintCrackBoost");
       if (fi) fi.value = typeof rec.faintCrackBoost === "number" ? String(rec.faintCrackBoost) : "0";
@@ -228,16 +232,18 @@
     const faintB = Number.isFinite(faintRaw) ? faintRaw : 0;
     const hiHover = hoverState.active && hoverState.crackId > 0;
     const hiSel = selectedId > 0;
+    const showImg = !el.showImage || el.showImage.checked;
+    const showProb = !el.showProb || el.showProb.checked;
 
     for (let i = 0; i < displayW * displayH; i++) {
       const o = i * 4;
-      let r = od[o];
-      let g = od[o + 1];
-      let b = od[o + 2];
+      let r = showImg ? od[o] : 0;
+      let g = showImg ? od[o + 1] : 0;
+      let b = showImg ? od[o + 2] : 0;
       const L = lum[i];
       const id = labels[i];
 
-      if (mask[i] === 1) {
+      if (showProb && mask[i] === 1) {
         const a = crackOverlayAlpha(L, Tpaint, alphaBase, faintB);
         r = Math.round(r * (1 - a) + 255 * a);
         g = Math.round(g * (1 - a) + 0 * a);
@@ -393,6 +399,8 @@
           if (fi) fi.value = String(d.faintCrackBoost);
           syncFaintCrackBoostLabel();
         }
+        if (d.showImage != null && el.showImage) el.showImage.checked = !!d.showImage;
+        if (d.showProb != null && el.showProb) el.showProb.checked = !!d.showProb;
         paint();
       } else if (d.type === "threshold") {
         if (d.threshold != null) {
@@ -413,6 +421,20 @@
     paint();
     broadcastSync({ type: "ui", overlayAlpha: Number(el.overlayAlpha.value) });
   });
+
+  if (el.showImage) {
+    el.showImage.addEventListener("change", () => {
+      paint();
+      broadcastSync({ type: "ui", showImage: el.showImage.checked });
+    });
+  }
+
+  if (el.showProb) {
+    el.showProb.addEventListener("change", () => {
+      paint();
+      broadcastSync({ type: "ui", showProb: el.showProb.checked });
+    });
+  }
 
   function onFaintCrackBoostInput(ev) {
     if (!ev.target || ev.target.id !== "faintCrackBoost") return;

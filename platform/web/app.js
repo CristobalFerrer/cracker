@@ -30,6 +30,8 @@
     thresholdVal: document.getElementById("thresholdVal"),
     overlayAlpha: document.getElementById("overlayAlpha"),
     overlayAlphaVal: document.getElementById("overlayAlphaVal"),
+    showImage: document.getElementById("showImage"),
+    showProb: document.getElementById("showProb"),
     zoom: document.getElementById("zoom"),
     zoomVal: document.getElementById("zoomVal"),
     btnClear: document.getElementById("btnClear"),
@@ -38,16 +40,12 @@
     canvas: document.getElementById("canvas"),
     viewport: document.getElementById("viewport"),
     jobForm: document.getElementById("jobForm"),
+    jobImage: document.getElementById("jobImage"),
     jobLabel: document.getElementById("jobLabel"),
     jobTiling: document.getElementById("jobTiling"),
-    jobOutFull: document.getElementById("jobOutFull"),
-    jobTargetLongEdge: document.getElementById("jobTargetLongEdge"),
-    orthoLongSideLbl: document.getElementById("orthoLongSideLbl"),
-    inferenceScaleHint: document.getElementById("inferenceScaleHint"),
     jobOverlap: document.getElementById("jobOverlap"),
     jobBatch: document.getElementById("jobBatch"),
     jobSize: document.getElementById("jobSize"),
-    jobInputDir: document.getElementById("jobInputDir"),
     btnStartJob: document.getElementById("btnStartJob"),
     jobPollStatus: document.getElementById("jobPollStatus"),
     selRun: document.getElementById("selRun"),
@@ -59,7 +57,6 @@
     btnLoadServer: document.getElementById("btnLoadServer"),
     btnPopout: document.getElementById("btnPopout"),
     viewportEmpty: document.getElementById("viewportEmpty"),
-    jobDebugTiming: document.getElementById("jobDebugTiming"),
     jobLog: document.getElementById("jobLog"),
     jobLogHint: document.getElementById("jobLogHint"),
     btnRefreshJobLog: document.getElementById("btnRefreshJobLog"),
@@ -107,9 +104,6 @@
   let jobPollTimer = null;
   /** Job id currently being polled (for live logs); cleared when the run finishes. */
   let activePollJobId = null;
-
-  /** max(naturalWidth, naturalHeight) of loaded original for inference-scale hint; 0 if none. */
-  let detectedOrthoLongEdgePx = 0;
 
   /** @type {BroadcastChannel|null} */
   let syncBc = null;
@@ -200,6 +194,8 @@
             if (fi) fi.value = String(d.faintCrackBoost);
             syncFaintCrackBoostLabel();
           }
+          if (d.showImage != null && el.showImage) el.showImage.checked = !!d.showImage;
+          if (d.showProb != null && el.showProb) el.showProb.checked = !!d.showProb;
           paint();
         } else if (d.type === "threshold") {
           if (d.threshold != null) {
@@ -241,62 +237,6 @@
     if (activePollJobId && isRunJobId(activePollJobId)) return activePollJobId;
     if (el.selRun && isRunJobId(el.selRun.value)) return el.selRun.value;
     return null;
-  }
-
-  function refreshOrthoPreviewFromViewer() {
-    if (imgOriginal && imgOriginal.naturalWidth > 0 && imgOriginal.naturalHeight > 0) {
-      detectedOrthoLongEdgePx = Math.max(imgOriginal.naturalWidth, imgOriginal.naturalHeight);
-      if (el.orthoLongSideLbl) {
-        el.orthoLongSideLbl.textContent = `${detectedOrthoLongEdgePx} px (full-res original loaded below)`;
-      }
-    } else {
-      detectedOrthoLongEdgePx = 0;
-      if (el.orthoLongSideLbl) {
-        el.orthoLongSideLbl.textContent = "— load an original below (local file or a server result) to see one";
-      }
-    }
-    syncInferenceScaleHint();
-  }
-
-  function syncInferenceScaleHint() {
-    if (!el.inferenceScaleHint) return;
-    const target = Number(el.jobTargetLongEdge && el.jobTargetLongEdge.value);
-    const ref = detectedOrthoLongEdgePx;
-    if (!target || target <= 0) {
-      el.inferenceScaleHint.textContent =
-        "Inference scale: 1 (no resize; longest side stays at full pixel size before tiling / single patch).";
-      return;
-    }
-    let t =
-      "Inference scale is computed per image: scale = " +
-      target +
-      " / max(width, height). The shorter side uses the same factor (aspect ratio kept).";
-    if (ref > 0) {
-      const raw = target / ref;
-      const clamped = Math.max(0.01, Math.min(4, raw));
-      t +=
-        " Example using your loaded original (longest side " +
-        ref +
-        " px): " +
-        target +
-        " / " +
-        ref +
-        " ~ " +
-        raw.toFixed(4) +
-        " (per-image scale varies if files differ in size).";
-      if (Math.abs(raw - clamped) > 1e-6) {
-        t +=
-          " The engine clamps scale to [0.01 .. 4], so actual scale would be " +
-          clamped.toFixed(4) +
-          ", not " +
-          raw.toFixed(4) +
-          ".";
-      }
-    } else {
-      t +=
-        " Load an original in the viewer to see an example ratio for your ortho size.";
-    }
-    el.inferenceScaleHint.textContent = t;
   }
 
   function refreshStatus() {
@@ -577,7 +517,6 @@
       const [imO, imC] = await Promise.all([loadImageFromUrl(origUrl), loadImageFromUrl(crackUrl)]);
       imgOriginal = imO;
       imgCrack = imC;
-      refreshOrthoPreviewFromViewer();
       analyzeAndPaint();
     } catch (err) {
       analysisMessage = "";
@@ -901,6 +840,8 @@
           const n = document.getElementById("faintCrackBoost");
           return n ? Number(n.value) : 0;
         })(),
+        showImage: !el.showImage || el.showImage.checked,
+        showProb: !el.showProb || el.showProb.checked,
       });
       broadcastSync({ type: "snapshot" });
     } catch (e) {
@@ -998,16 +939,18 @@
     const faintB = Number.isFinite(faintRaw) ? faintRaw : 0;
     const hiHover = hoverState.active && hoverState.crackId > 0;
     const hiSel = selectedId > 0;
+    const showImg = !el.showImage || el.showImage.checked;
+    const showProb = !el.showProb || el.showProb.checked;
 
     for (let i = 0; i < displayW * displayH; i++) {
       const o = i * 4;
-      let r = od[o];
-      let g = od[o + 1];
-      let b = od[o + 2];
+      let r = showImg ? od[o] : 0;
+      let g = showImg ? od[o + 1] : 0;
+      let b = showImg ? od[o + 2] : 0;
       const L = lum[i];
       const id = labels[i];
 
-      if (mask[i] === 1) {
+      if (showProb && mask[i] === 1) {
         const a = crackOverlayAlpha(L, Tpaint, alphaBase, faintB);
         r = Math.round(r * (1 - a) + 255 * a);
         g = Math.round(g * (1 - a) + 0 * a);
@@ -1128,7 +1071,6 @@
       const f = el.fileOrig.files[0];
       imgOriginal = await loadFileAsImage(f);
       if (imgCrack) {
-        refreshOrthoPreviewFromViewer();
         analyzeAndPaint();
       } else {
         analysisMessage = "";
@@ -1136,7 +1078,6 @@
         labels = null;
         mask = null;
         renderCrackTable();
-        refreshOrthoPreviewFromViewer();
         el.status.textContent = "Original loaded. Now load crack probability PNG.";
       }
     } catch {
@@ -1157,7 +1098,6 @@
         labels = null;
         mask = null;
         renderCrackTable();
-        refreshOrthoPreviewFromViewer();
         el.status.textContent = "Crack map loaded. Now load original image.";
       }
     } catch {
@@ -1176,6 +1116,20 @@
     paint();
     broadcastSync({ type: "ui", overlayAlpha: Number(el.overlayAlpha.value) });
   });
+
+  if (el.showImage) {
+    el.showImage.addEventListener("change", () => {
+      paint();
+      broadcastSync({ type: "ui", showImage: el.showImage.checked });
+    });
+  }
+
+  if (el.showProb) {
+    el.showProb.addEventListener("change", () => {
+      paint();
+      broadcastSync({ type: "ui", showProb: el.showProb.checked });
+    });
+  }
 
   function onFaintCrackBoostInput(ev) {
     if (!ev.target || ev.target.id !== "faintCrackBoost") return;
@@ -1232,29 +1186,26 @@
   if (el.jobForm && el.btnRefreshRuns && el.selRun && el.btnLoadServer) {
     el.jobForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+      const file = el.jobImage && el.jobImage.files && el.jobImage.files[0];
+      if (!file) {
+        setJobPollStatus("Choose a photo first.", "failed");
+        return;
+      }
       clearJobPoll();
       activePollJobId = null;
-      const body = {
-        label: el.jobLabel.value.trim() || null,
-        use_tiling_for_large_images: el.jobTiling.checked,
-        output_at_input_resolution: el.jobOutFull.checked,
-        target_long_edge_px: Math.max(0, Math.floor(Number(el.jobTargetLongEdge.value)) || 0),
-        tile_overlap_percent: Number(el.jobOverlap.value),
-        tile_batch_size: Number(el.jobBatch.value),
-        size: Number(el.jobSize.value),
-        input_dir: el.jobInputDir.value.trim() || null,
-        debug_timing: !!(el.jobDebugTiming && el.jobDebugTiming.checked),
-      };
+      const body = new FormData();
+      body.append("file", file);
+      if (el.jobLabel.value.trim()) body.append("label", el.jobLabel.value.trim());
+      body.append("use_tiling_for_large_images", String(el.jobTiling.checked));
+      body.append("tile_overlap_percent", String(Number(el.jobOverlap.value)));
+      body.append("tile_batch_size", String(Number(el.jobBatch.value)));
+      body.append("size", String(Number(el.jobSize.value)));
       try {
         setJobFormBusy(true);
-        setJobPollStatus("Submitting…", "queued");
-        if (el.jobLog) el.jobLog.textContent = "Submitting job…";
+        setJobPollStatus("Uploading…", "queued");
+        if (el.jobLog) el.jobLog.textContent = "Uploading photo…";
         if (el.jobLogHint) el.jobLogHint.textContent = "";
-        const res = await fetch("/jobs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
+        const res = await fetch("/jobs/from-upload", { method: "POST", body });
         if (!res.ok) {
           setJobFormBusy(false);
           setJobPollStatus(await res.text(), "failed");
@@ -1332,9 +1283,6 @@
         else if (el.jobLogHint) el.jobLogHint.textContent = "select a run or start a job";
       });
     }
-
-    refreshOrthoPreviewFromViewer();
-    if (el.jobTargetLongEdge) el.jobTargetLongEdge.addEventListener("input", syncInferenceScaleHint);
 
     el.btnLoadServer.addEventListener("click", () => {
       void loadServerPair();

@@ -29,38 +29,28 @@
 
       <div id="panelJob" role="tabpanel" class="tab-panel" aria-labelledby="tabJob">
         <section class="panel">
-          <p class="hint">Runs DeepCrack on images in <code>input_crops</code> (or a folder you choose below) and writes results into a new run folder.</p>
+          <p class="hint">Pick a pavement photo and run crack detection on it.</p>
           <form id="jobForm" class="job-form">
-            <label>Label <input type="text" id="jobLabel" placeholder="optional note, e.g. “north lot”" /></label>
-            <label>Input folder (optional) <input type="text" id="jobInputDir" placeholder="default: DeepCrack …/input_crops" class="wide" /></label>
+            <label class="file-picker">
+              Photo
+              <input type="file" id="jobImage" accept="image/*" required />
+            </label>
+            <label>Label (optional) <input type="text" id="jobLabel" placeholder="e.g. “north lot”" /></label>
 
             <details class="advanced">
               <summary>Advanced settings</summary>
               <div class="advanced-grid">
-                <label class="inline"><input type="checkbox" id="jobTiling" checked /> Tile large images (512² windows)</label>
-                <label class="inline"><input type="checkbox" id="jobOutFull" checked /> Output at full input resolution</label>
-                <label class="inline"><input type="checkbox" id="jobDebugTiming" checked /> Phase timing lines in log</label>
-                <label>Effective longest side (px)
-                  <input type="number" id="jobTargetLongEdge" min="0" max="65535" step="1" value="0" />
-                  <span class="hint-inline">0 = full resolution</span>
-                </label>
-                <label>Tile overlap (% of tile width)
-                  <input type="number" id="jobOverlap" min="0" max="99" step="0.5" value="25" />
-                </label>
+                <label class="inline" title="Recommended for full-size photos"><input type="checkbox" id="jobTiling" checked /> Tile large images</label>
+                <label>Tile overlap (%) <input type="number" id="jobOverlap" min="0" max="99" step="0.5" value="25" /></label>
                 <label>Tile batch size <input type="number" id="jobBatch" min="1" max="32" value="4" /></label>
-                <label>Model input size <input type="number" id="jobSize" min="64" max="1024" value="512" step="64" /></label>
-                <p class="hint ortho-detected-hint" id="orthoDetectedWrap">
-                  Longest side for scale example (from loaded original):
-                  <strong id="orthoLongSideLbl">— load an original below to see one</strong>
-                </p>
-                <p class="hint inference-scale-hint" id="inferenceScaleHint"></p>
+                <label>Model input size (px) <input type="number" id="jobSize" min="64" max="1024" value="512" step="64" /></label>
               </div>
             </details>
 
-            <button type="submit" id="btnStartJob">Start detection</button>
+            <button type="submit" id="btnStartJob">Run detection</button>
           </form>
           <p class="job-status" id="jobPollStatus"></p>
-          <details class="job-log-wrap" open>
+          <details class="job-log-wrap">
             <summary>Job output</summary>
             <div class="job-log-toolbar">
               <span class="hint-inline" id="jobLogHint"></span>
@@ -114,6 +104,11 @@
             <input type="file" id="fileCrack" accept="image/*" />
           </label>
           <button type="button" id="btnClear" class="btn-small">Clear selection</button>
+        </div>
+        <div class="viewer-toolbar-row">
+          <span class="toolbar-group-label">Show</span>
+          <label class="inline"><input type="checkbox" id="showImage" checked /> Photo</label>
+          <label class="inline" title="Uncheck the photo too and this shows the raw crack signal on black"><input type="checkbox" id="showProb" checked /> Probabilities</label>
         </div>
         <div class="viewer-toolbar-row">
           <label>

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import threading
@@ -238,8 +239,34 @@ def _worker_thread(job_id: str) -> None:
         print(msg, flush=True)
 
 
-def enqueue_inference_job(label: str | None, params: InferenceJobParams) -> InferenceJobRecord:
+def _safe_upload_filename(name: str) -> str:
+    """Sanitize a browser-supplied filename and force a recognized image extension."""
+    base = Path(name or "").name
+    base = re.sub(r"[^A-Za-z0-9._ -]", "_", base).strip(" .") or "image"
+    stem = Path(base).stem or "image"
+    suffix = Path(base).suffix.lower()
+    if suffix not in (".jpg", ".jpeg", ".png"):
+        suffix = ".jpg"
+    return f"{stem}{suffix}"
+
+
+def save_uploaded_input(data: bytes, filename: str) -> tuple[str, str]:
+    """Create a fresh run folder, save an uploaded image as its sole input.
+
+    Returns (job_id, input_dir) so the caller can enqueue a job against that folder.
+    """
     job_id = str(uuid.uuid4())
+    input_dir = RUNS_DIR / job_id / "input"
+    input_dir.mkdir(parents=True, exist_ok=True)
+    safe_name = _safe_upload_filename(filename)
+    (input_dir / safe_name).write_bytes(data)
+    return job_id, str(input_dir)
+
+
+def enqueue_inference_job(
+    label: str | None, params: InferenceJobParams, job_id: str | None = None
+) -> InferenceJobRecord:
+    job_id = job_id or str(uuid.uuid4())
     run_dir = RUNS_DIR / job_id
     outputs = run_dir / "outputs"
     outputs.mkdir(parents=True, exist_ok=True)
