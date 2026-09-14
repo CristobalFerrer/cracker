@@ -16,6 +16,7 @@ platform/data/runs/*
 !platform/data/runs/.gitkeep
 
 # Editor / OS cruft
+.vscode/
 .vs/
 *.swp
 Thumbs.db
