@@ -66,6 +66,7 @@
     inputGsd: document.getElementById("inputGsd"),
     crackTable: document.getElementById("crackTable"),
     crackTableBody: document.getElementById("crackTableBody"),
+    btnExportCsv: document.getElementById("btnExportCsv"),
   };
 
   el.maxEdgeLbl.textContent = String(MAX_EDGE);
@@ -712,19 +713,9 @@
     tr?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
 
-  function renderCrackTable() {
-    if (!el.crackTableBody || !el.crackTable) return;
-    const mPerDisp = getMetersPerDisplayPixel();
-    el.crackTable.classList.toggle("no-gsd", !(mPerDisp > 0));
-
-    if (!regionRows.length) {
-      el.crackTableBody.innerHTML =
-        '<tr class="placeholder-row"><td colspan="10">Load original + crack probability, then adjust threshold to list regions.</td></tr>';
-      return;
-    }
-
+  function getSortedCrackRows(mPerDisp) {
     const mult = crackSortDir;
-    const sorted = regionRows.slice().sort((a, b) => {
+    return regionRows.slice().sort((a, b) => {
       let av;
       let bv;
       const k = crackSortKey;
@@ -748,6 +739,20 @@
       if (av > bv) return 1 * mult;
       return (a.id - b.id) * mult;
     });
+  }
+
+  function renderCrackTable() {
+    if (!el.crackTableBody || !el.crackTable) return;
+    const mPerDisp = getMetersPerDisplayPixel();
+    el.crackTable.classList.toggle("no-gsd", !(mPerDisp > 0));
+
+    if (!regionRows.length) {
+      el.crackTableBody.innerHTML =
+        '<tr class="placeholder-row"><td colspan="10">Load original + crack probability, then adjust threshold to list regions.</td></tr>';
+      return;
+    }
+
+    const sorted = getSortedCrackRows(mPerDisp);
 
     const fmt = (v, d) => (mPerDisp > 0 ? v.toFixed(d) : "—");
     el.crackTableBody.innerHTML = sorted
@@ -775,6 +780,65 @@
       })
       .join("");
     syncCrackTableSelection();
+  }
+
+  function csvEscape(v) {
+    const s = String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }
+
+  function exportCrackTableCsv() {
+    if (!regionRows.length) return;
+    const mPerDisp = getMetersPerDisplayPixel();
+    const sorted = getSortedCrackRows(mPerDisp);
+    const header = [
+      "ID",
+      "PCI-style (heuristic)",
+      "Area (px)",
+      "Length est. (px)",
+      "Axis deg",
+      "Elong.",
+      "Mean signal",
+      "Bbox W (px)",
+      "Bbox H (px)",
+      "Length (m)",
+      "Area (m2)",
+      "Note",
+    ];
+    const lines = [header.map(csvEscape).join(",")];
+    sorted.forEach((r) => {
+      const lenM = mPerDisp > 0 ? r.lengthPx * mPerDisp : "";
+      const areaM2 = mPerDisp > 0 ? r.area * mPerDisp * mPerDisp : "";
+      lines.push(
+        [
+          r.id,
+          r.pciLabel,
+          r.area,
+          r.lengthPx.toFixed(1),
+          r.angleDeg.toFixed(1),
+          r.elong.toFixed(2),
+          r.meanLum.toFixed(1),
+          r.bboxW,
+          r.bboxH,
+          lenM === "" ? "" : lenM.toFixed(3),
+          areaM2 === "" ? "" : areaM2.toFixed(4),
+          r.pciNote || "",
+        ]
+          .map(csvEscape)
+          .join(","),
+      );
+    });
+
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const ts = new Date().toISOString().replace(/[:.]/g, "-");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `crack-summary-${ts}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   }
 
   function syncThresholdLabel() {
@@ -1163,6 +1227,8 @@
     },
     { passive: false },
   );
+
+  el.btnExportCsv?.addEventListener("click", exportCrackTableCsv);
 
   el.btnClear.addEventListener("click", () => {
     selectedId = 0;

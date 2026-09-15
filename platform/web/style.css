@@ -619,6 +619,15 @@ details.advanced .advanced-grid {
   flex-wrap: wrap;
 }
 
+.panel-summary-head {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-summary-head h2 {
+  margin-bottom: 0;
+}
+
 .pci-disclaimer-wrap {
   margin-bottom: 0.75rem;
 }

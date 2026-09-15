@@ -18,10 +18,10 @@
     <p id="viewerHint" class="sub">Load or run a detection on the main page — this window updates automatically. Controls below mirror overlay / zoom / threshold; threshold changes here are sent back to the main page for a full re-analysis.</p>
     <label class="inline"><input type="checkbox" id="showImage" checked /> Photo</label>
     <label class="inline" title="Uncheck the photo too and this shows the raw crack signal on black"><input type="checkbox" id="showProb" checked /> Probabilities</label>
-    <label>Overlay <input type="range" id="overlayAlpha" min="0" max="100" value="55" /> <span id="overlayAlphaVal">0.55</span></label>
+    <label>Overlay <input type="range" id="overlayAlpha" min="0" max="100" value="100" /> <span id="overlayAlphaVal">1.00</span></label>
     <label title="Weak crack signal → stronger tint">Faint crack boost <input type="range" id="faintCrackBoost" min="0" max="100" value="35" /> <span id="faintCrackBoostVal">35%</span></label>
     <label>Zoom <input type="range" id="zoom" min="25" max="400" value="100" step="5" /> <span id="zoomVal">100%</span></label>
-    <label>Threshold <input type="range" id="threshold" min="0" max="255" value="128" /> <span id="thresholdVal">128</span></label>
+    <label>Threshold <input type="range" id="threshold" min="0" max="255" value="20" /> <span id="thresholdVal">20</span></label>
     <button type="button" id="btnZoomIn">Zoom +</button>
     <button type="button" id="btnZoomOut">Zoom −</button>
     <button type="button" id="btnZoomReset">Reset zoom</button>

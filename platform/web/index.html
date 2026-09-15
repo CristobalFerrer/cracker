@@ -113,13 +113,13 @@
         <div class="viewer-toolbar-row">
           <label>
             Threshold (0–255)
-            <input type="range" id="threshold" min="0" max="255" value="96" />
-            <span id="thresholdVal">96</span>
+            <input type="range" id="threshold" min="0" max="255" value="20" />
+            <span id="thresholdVal">20</span>
           </label>
           <label>
             Overlay strength
-            <input type="range" id="overlayAlpha" min="0" max="100" value="55" />
-            <span id="overlayAlphaVal">0.55</span>
+            <input type="range" id="overlayAlpha" min="0" max="100" value="100" />
+            <span id="overlayAlphaVal">1.00</span>
           </label>
           <label title="Pulls up weak crack signal so thin lines stay visible when zoomed out">
             Faint crack boost
@@ -146,7 +146,10 @@
     </section>
 
     <section class="panel panel-summary">
-      <h2>Crack summary <span class="hint-inline">(PCI-oriented heuristics)</span></h2>
+      <div class="row panel-summary-head">
+        <h2>Crack summary <span class="hint-inline">(PCI-oriented heuristics)</span></h2>
+        <button type="button" id="btnExportCsv" class="btn-small" title="Export the crack summary table as a CSV file">Export CSV</button>
+      </div>
       <details class="pci-disclaimer-wrap">
         <summary>What is the "PCI-style" column?</summary>
         <p class="hint pci-disclaimer">
